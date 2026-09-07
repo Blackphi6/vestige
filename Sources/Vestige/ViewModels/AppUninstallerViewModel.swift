@@ -30,6 +30,15 @@ final class AppUninstallerViewModel: ObservableObject {
             await MainActor.run {
                 self.installedApps = apps
                 self.isLoadingApps = false
+                if let selected = self.selectedApp {
+                    if let stillInstalled = apps.first(where: { $0.id == selected.id }) {
+                        self.selectApp(stillInstalled)
+                    } else {
+                        self.selectedApp = nil
+                        self.scanResults = []
+                        self.lastDeletionSummary = nil
+                    }
+                }
             }
         }
     }
@@ -84,9 +93,6 @@ final class AppUninstallerViewModel: ObservableObject {
             errorMessage = failures.joined(separator: "\n")
         }
 
-        if let app = selectedApp {
-            selectApp(app)
-        }
         loadApps()
     }
 
