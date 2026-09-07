@@ -13,7 +13,7 @@ enum ResidueScanner {
             items.append(ResidueItem(
                 category: category,
                 title: path.lastPathComponent,
-                detail: path.path,
+                detail: PathDisplay.string(for: path),
                 sizeBytes: DirectorySizeCalculator.size(at: path),
                 action: .deleteFile(path)
             ))
@@ -49,7 +49,7 @@ enum ResidueScanner {
                 items.append(ResidueItem(
                     category: .systemLaunchItems,
                     title: url.lastPathComponent,
-                    detail: url.path,
+                    detail: PathDisplay.string(for: url),
                     sizeBytes: nil,
                     action: .manualReviewOnly(url)
                 ))
