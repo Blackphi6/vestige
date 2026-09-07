@@ -74,7 +74,7 @@ struct ScanResultView: View {
     private var resultList: some View {
         List {
             ForEach(groupedResults, id: \.0) { category, items in
-                Section(category.rawValue) {
+                Section(category.displayName) {
                     ForEach(items) { item in
                         ScanResultRowView(item: item) {
                             viewModel.toggleSelection(id: item.id)
@@ -94,7 +94,7 @@ struct ScanResultView: View {
 
             Picker("", selection: $viewModel.trashDisposition) {
                 ForEach(TrashDisposition.allCases, id: \.self) { disposition in
-                    Text(disposition.rawValue).tag(disposition)
+                    Text(disposition.displayName).tag(disposition)
                 }
             }
             .pickerStyle(.segmented)

@@ -3,10 +3,11 @@ options:
   bundleIdPrefix: dev.blackphi6
   deploymentTarget:
     macOS: "13.0"
+  developmentLanguage: ja
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.1.2"
+    MARKETING_VERSION: "0.2.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
@@ -25,7 +26,7 @@ targets:
       path: Sources/Vestige/Info.plist
       properties:
         CFBundleDisplayName: Vestige
-        CFBundleShortVersionString: "0.1.2"
+        CFBundleShortVersionString: "0.2.0"
         CFBundleIconName: AppIcon
         LSMinimumSystemVersion: "13.0"
         LSApplicationCategoryType: public.app-category.utilities
@@ -33,6 +34,8 @@ targets:
         NSHighResolutionCapable: true
         LSUIElement: false
         ITSAppUsesNonExemptEncryption: false
+        CFBundleLocalizations: [ja, en, zh-Hans]
+        CFBundleDevelopmentRegion: ja
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.blackphi6.vestige

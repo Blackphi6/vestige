@@ -19,6 +19,14 @@ enum ResidueScanner {
             ))
         }
 
+        // The app bundle itself — previously omitted, so a multi-hundred-MB app showed up
+        // nowhere in the scan and its size never factored into the total. Homebrew Casks
+        // skip this: `brew uninstall --zap` already removes the bundle, so its size is
+        // attached to the Homebrew Cask entry below instead of listing it twice.
+        if app.homebrewCaskToken == nil {
+            addIfExists(.appBundle, app.appPath)
+        }
+
         addIfExists(.applicationSupport, library.appendingPathComponent("Application Support/\(app.name)"))
         if !app.bundleID.isEmpty {
             addIfExists(.applicationSupport, library.appendingPathComponent("Application Support/\(app.bundleID)"))
@@ -83,7 +91,7 @@ enum ResidueScanner {
                 category: .homebrewCask,
                 title: "Homebrew Cask: \(token)",
                 detail: "brew uninstall --zap --force --cask \(token)",
-                sizeBytes: nil,
+                sizeBytes: DirectorySizeCalculator.size(at: app.appPath),
                 action: .uninstallHomebrewCask(token: token)
             ))
         }
@@ -94,8 +102,7 @@ enum ResidueScanner {
                 title: "\(service) permission",
                 detail: "tccutil reset \(service) \(app.bundleID)",
                 sizeBytes: nil,
-                action: .resetTCCService(service: service),
-                isSelected: false
+                action: .resetTCCService(service: service)
             ))
         }
 

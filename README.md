@@ -1,6 +1,7 @@
 # Vestige
 
 macOS 用のアプリ完全アンインストーラーです。Apple Silicon ネイティブ (SwiftUI / arm64)。
+日本語・English・简体中文に対応し、Macのシステム言語設定に応じて自動的に切り替わります。
 
 `/Applications` からアプリを消しても、`~/Library` 配下の設定・キャッシュ・
 Homebrew Cask の実体・プライバシー(TCC)権限が残り続けて、アンインストールした
@@ -11,6 +12,8 @@ Homebrew Cask の実体・プライバシー(TCC)権限が残り続けて、ア�
 
 - `/Applications`・`~/Applications`・Homebrew Cask のインストール済みアプリを一覧表示
 - アプリを選ぶと、次のカテゴリを横断スキャン
+  - アプリ本体（Homebrew Cask 以外。Cask の場合は `brew uninstall --zap` に
+    含まれるため、アプリ本体のサイズを Homebrew Cask の項目に反映）
   - Application Support / Preferences / Caches / HTTPStorages / Containers /
     Saved Application State / WebKit / Logs
   - ユーザー LaunchAgents（システム LaunchAgents/Daemons は検出のみ、削除は対象外）

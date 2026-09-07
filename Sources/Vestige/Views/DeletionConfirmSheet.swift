@@ -11,13 +11,24 @@ struct DeletionConfirmSheet: View {
         items.reduce(0) { $0 + ($1.sizeBytes ?? 0) }
     }
 
+    // Interpolating a ternary's raw string literal into a Text(_:) does not make that
+    // literal a separate localization key — String(localized:) here does.
+    private var revertibilityNote: String {
+        disposition == .moveToTrash
+            ? String(localized: "ゴミ箱から復元できます")
+            : String(localized: "取り消せません")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("\(app.name) を削除しますか？", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
                 .foregroundStyle(.orange)
 
-            Text("以下 \(items.count) 件、合計 \(ByteFormatter.string(for: totalSize)) を\(disposition == .moveToTrash ? "ゴミ箱に移動" : "完全に削除")します。この操作は\(disposition == .moveToTrash ? "ゴミ箱から復元できます" : "取り消せません")。")
+            // String(items.count), not \(items.count) directly: an Int interpolation
+            // compiles to a %lld placeholder, which wouldn't match the %@ key registered
+            // in Localizable.xcstrings and would silently fall back to the source string.
+            Text("以下 \(String(items.count)) 件、合計 \(ByteFormatter.string(for: totalSize)) を\(disposition.displayName)します。この操作は\(revertibilityNote)。")
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
@@ -35,7 +46,7 @@ struct DeletionConfirmSheet: View {
             HStack {
                 Spacer()
                 Button("キャンセル", role: .cancel, action: onCancel)
-                Button(disposition == .moveToTrash ? "ゴミ箱に移動" : "完全に削除", role: .destructive, action: onConfirm)
+                Button(disposition.displayName, role: .destructive, action: onConfirm)
                     .keyboardShortcut(.defaultAction)
             }
         }

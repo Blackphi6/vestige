@@ -3,6 +3,15 @@ import Foundation
 enum TrashDisposition: String, CaseIterable, Sendable {
     case moveToTrash = "Move to Trash"
     case deletePermanently = "Delete Permanently"
+
+    /// rawValue stays English (it's not shown directly) so it's stable to store/compare;
+    /// this is the localized string shown in the UI.
+    var displayName: String {
+        switch self {
+        case .moveToTrash: return String(localized: "ゴミ箱に移動")
+        case .deletePermanently: return String(localized: "完全に削除")
+        }
+    }
 }
 
 enum RemovalOutcome: Sendable {
