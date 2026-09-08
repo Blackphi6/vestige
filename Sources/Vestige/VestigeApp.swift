@@ -1,27 +1,19 @@
 import SwiftUI
-import Sparkle
 
 @main
 struct VestigeApp: App {
-    private let updaterController: SPUStandardUpdaterController
-    private let updaterDelegate = UpdaterDelegate()
-
-    init() {
-        updaterController = SPUStandardUpdaterController(
-            startingUpdater: true,
-            updaterDelegate: updaterDelegate,
-            userDriverDelegate: nil
-        )
-    }
+    @StateObject private var updateChecker = UpdateCheckViewModel()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(updateChecker)
         }
         .windowResizability(.contentSize)
         .commands {
             CommandGroup(after: .appInfo) {
-                CheckForUpdatesView(updater: updaterController.updater)
+                CheckForUpdatesView()
+                    .environmentObject(updateChecker)
             }
         }
     }

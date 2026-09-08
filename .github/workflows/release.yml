@@ -20,8 +20,6 @@ jobs:
 
       - name: Build and package
         run: ./Scripts/build-release.sh
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
 
       - name: Run tests
         run: |
@@ -31,8 +29,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/*.zip
-            dist/appcast.xml
+          files: dist/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

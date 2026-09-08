@@ -1,31 +1,15 @@
 import SwiftUI
-import Sparkle
 
-/// Standard Sparkle menu-command wrapper: mirrors `updater.canCheckForUpdates` into a
-/// disabled/enabled menu item, since `SPUUpdater` itself isn't an ObservableObject.
-@MainActor
-private final class CheckForUpdatesViewModel: ObservableObject {
-    @Published var canCheckForUpdates = false
-
-    init(updater: SPUUpdater) {
-        updater.publisher(for: \.canCheckForUpdates)
-            .assign(to: &$canCheckForUpdates)
-    }
-}
-
+/// Menu-command entry point. Rendered inside a `CommandGroup`, which sits outside the
+/// window's view hierarchy — the actual result alert is presented from ContentView via
+/// the shared `UpdateCheckViewModel` instead of here.
 struct CheckForUpdatesView: View {
-    @ObservedObject private var viewModel: CheckForUpdatesViewModel
-    private let updater: SPUUpdater
-
-    init(updater: SPUUpdater) {
-        self.updater = updater
-        self.viewModel = CheckForUpdatesViewModel(updater: updater)
-    }
+    @EnvironmentObject private var updateChecker: UpdateCheckViewModel
 
     var body: some View {
         Button(String(localized: "アップデートを確認…")) {
-            updater.checkForUpdates()
+            updateChecker.check()
         }
-        .disabled(!viewModel.canCheckForUpdates)
+        .disabled(updateChecker.isChecking)
     }
 }

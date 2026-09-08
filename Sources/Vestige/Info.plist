@@ -40,13 +40,5 @@
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026. MIT Licensed.</string>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
-	<key>SUFeedURL</key>
-	<string>https://github.com/Blackphi6/vestige/releases/latest/download/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>a5Ie6ch3YMwhYT0B3oXzl+r4VwNBt//m7ZZ42xhzIP8=</string>
-	<key>SUScheduledCheckInterval</key>
-	<integer>86400</integer>
 </dict>
 </plist>
