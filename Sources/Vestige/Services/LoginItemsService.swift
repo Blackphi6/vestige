@@ -6,22 +6,46 @@ import Foundation
 /// System Settings > General > Login Items.
 ///
 /// macOS prompts for authorization on this call when launched from an unsigned/ad-hoc
-/// GUI app. Selecting an app used to re-run `dumpbtm` on every scan, which meant a fresh
-/// prompt per app; the dump is cached for the lifetime of the process so the user is
-/// asked at most once per launch.
+/// GUI app — that prompt is shown by the OS's Authorization Services around the sfltool
+/// binary itself, so Vestige has no way to add a Touch ID option or otherwise suppress
+/// it. What Vestige can control is how often it asks: the result is cached in
+/// UserDefaults (so it survives app restarts, not just the current process) and
+/// refreshed at most once every `cacheValidity` — old enough that most users only see
+/// the prompt every so often, fresh enough that a since-installed app's login item
+/// still gets picked up eventually.
 enum LoginItemsService {
+    private static let cacheKey = "LoginItemsService.dumpCache"
+    private static let cacheDateKey = "LoginItemsService.dumpCacheDate"
+    static let cacheValidity: TimeInterval = 7 * 24 * 60 * 60
+
     // Worst case on a race is one redundant `sfltool dumpbtm` call (and its auth
     // prompt), not corrupted state — an actor would be overkill for a String?.
-    nonisolated(unsafe) private static var cachedDump: String?
+    nonisolated(unsafe) private static var inMemoryDump: String?
     nonisolated(unsafe) private static var didAttemptDump = false
 
+    static func isCacheValid(cachedAt: Date, now: Date = Date()) -> Bool {
+        now.timeIntervalSince(cachedAt) < cacheValidity
+    }
+
     private static func dump() -> String? {
-        if didAttemptDump { return cachedDump }
+        if didAttemptDump { return inMemoryDump }
         didAttemptDump = true
+
+        let defaults = UserDefaults.standard
+        if let cachedDate = defaults.object(forKey: cacheDateKey) as? Date,
+           isCacheValid(cachedAt: cachedDate),
+           let cached = defaults.string(forKey: cacheKey) {
+            inMemoryDump = cached
+            return cached
+        }
+
         guard let sfltoolPath = ProcessRunner.resolveExecutable("sfltool", knownPaths: ["/usr/bin/sfltool"]) else { return nil }
         let result = ProcessRunner.run(sfltoolPath, ["dumpbtm"], timeout: 10)
         guard result.exitCode == 0 else { return nil }
-        cachedDump = result.stdout
+
+        defaults.set(result.stdout, forKey: cacheKey)
+        defaults.set(Date(), forKey: cacheDateKey)
+        inMemoryDump = result.stdout
         return result.stdout
     }
 
