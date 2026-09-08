@@ -19,7 +19,7 @@ struct AppRowView: View {
 
             Spacer()
 
-            if app.source == .homebrewCask {
+            if app.source == .homebrewCask || app.source == .homebrewFormula {
                 Text("brew")
                     .font(.system(size: 10, weight: .semibold))
                     .padding(.horizontal, 6)

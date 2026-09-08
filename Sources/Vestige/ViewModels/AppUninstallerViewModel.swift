@@ -105,6 +105,11 @@ final class AppUninstallerViewModel: ObservableObject {
             if result == nil || result?.exitCode != 0 {
                 throw ActionError.commandFailed(result?.stderr ?? "brew not found")
             }
+        case .uninstallHomebrewFormula(let name):
+            let result = HomebrewService.uninstallFormula(name: name)
+            if result == nil || result?.exitCode != 0 {
+                throw ActionError.commandFailed(result?.stderr ?? "brew not found")
+            }
         case .resetTCCService(let service):
             guard let app = selectedApp else { return }
             _ = TCCService.reset(service: service, bundleID: app.bundleID)

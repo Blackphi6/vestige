@@ -36,6 +36,27 @@ enum AppDiscoveryService {
                 ))
             }
         }
+
+        // Formula-installed GUI apps live in the Cellar, never in /Applications, so they'd
+        // otherwise go completely unnoticed (this is how the Thock case slipped through:
+        // its Cask was cleaned up, but a separately-installed Formula copy kept running).
+        var seenBundleIDs = Set(apps.map(\.bundleID))
+        for formulaApp in HomebrewService.installedFormulaApps() {
+            guard let info = BundleInfoReader.read(appPath: formulaApp.appPath),
+                  !seenBundleIDs.contains(info.bundleID)
+            else { continue }
+            seenBundleIDs.insert(info.bundleID)
+            apps.append(InstalledApp(
+                id: info.bundleID,
+                name: formulaApp.appPath.deletingPathExtension().lastPathComponent,
+                bundleID: info.bundleID,
+                version: info.version,
+                appPath: formulaApp.appPath,
+                source: .homebrewFormula,
+                homebrewFormulaName: formulaApp.formulaName
+            ))
+        }
+
         return apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }

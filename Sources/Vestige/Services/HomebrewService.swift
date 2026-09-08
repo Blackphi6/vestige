@@ -53,4 +53,41 @@ enum HomebrewService {
         guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else { return nil }
         return ProcessRunner.run(brewPath, ["uninstall", "--zap", "--force", "--cask", token], timeout: 60)
     }
+
+    struct FormulaAppInfo {
+        let formulaName: String
+        let appPath: URL
+    }
+
+    /// Some Homebrew formulae (as opposed to casks) install a GUI .app straight into the
+    /// Cellar rather than into /Applications — e.g. `brew install thock` vs. `brew install
+    /// --cask thock`. These never appear in a Cask-only scan or a /Applications listing,
+    /// so they're found by walking the Cellar directly rather than via `brew info --cask`.
+    private static let knownCellarPaths = ["/opt/homebrew/Cellar", "/usr/local/Cellar"]
+
+    static func installedFormulaApps() -> [FormulaAppInfo] {
+        let fm = FileManager.default
+        var results: [FormulaAppInfo] = []
+
+        for cellarPath in knownCellarPaths {
+            guard let formulaNames = try? fm.contentsOfDirectory(atPath: cellarPath) else { continue }
+            for formulaName in formulaNames {
+                let formulaDir = URL(fileURLWithPath: cellarPath).appendingPathComponent(formulaName)
+                guard let versions = try? fm.contentsOfDirectory(at: formulaDir, includingPropertiesForKeys: nil) else { continue }
+                for versionDir in versions {
+                    guard let entries = try? fm.contentsOfDirectory(at: versionDir, includingPropertiesForKeys: nil) else { continue }
+                    for entry in entries where entry.pathExtension == "app" {
+                        results.append(FormulaAppInfo(formulaName: formulaName, appPath: entry))
+                    }
+                }
+            }
+        }
+        return results
+    }
+
+    /// Runs `brew uninstall --force <name>` via the resolved `brew` binary.
+    static func uninstallFormula(name: String) -> ProcessRunner.Result? {
+        guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else { return nil }
+        return ProcessRunner.run(brewPath, ["uninstall", "--force", name], timeout: 60)
+    }
 }

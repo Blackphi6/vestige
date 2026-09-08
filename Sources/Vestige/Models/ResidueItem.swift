@@ -3,6 +3,7 @@ import Foundation
 enum ResidueAction: Sendable {
     case deleteFile(URL)
     case uninstallHomebrewCask(token: String)
+    case uninstallHomebrewFormula(name: String)
     case resetTCCService(service: String)
     case manualReviewOnly(URL)
     case informational

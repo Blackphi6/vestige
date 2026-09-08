@@ -10,14 +10,18 @@ Homebrew Cask の実体・プライバシー(TCC)権限が残り続けて、ア�
 
 ## 機能
 
-- `/Applications`・`~/Applications`・Homebrew Cask のインストール済みアプリを一覧表示
+- `/Applications`・`~/Applications`・Homebrew Cask・Homebrew Formula
+  （`brew install <formula>` で `/opt/homebrew/Cellar` 配下に直接 `.app` を
+  置くタイプ。`/Applications` にもCaskの一覧にも出てこないため見落としがち）
+  のインストール済みアプリを一覧表示
 - アプリを選ぶと、次のカテゴリを横断スキャン
-  - アプリ本体（Homebrew Cask 以外。Cask の場合は `brew uninstall --zap` に
-    含まれるため、アプリ本体のサイズを Homebrew Cask の項目に反映）
+  - アプリ本体（Homebrew Cask・Formula 以外。両方とも `brew uninstall` に
+    含まれるため、アプリ本体のサイズはそれぞれの項目に反映）
   - Application Support / Preferences / Caches / HTTPStorages / Containers /
     Saved Application State / WebKit / Logs
   - ユーザー LaunchAgents（システム LaunchAgents/Daemons は検出のみ、削除は対象外）
   - Homebrew Cask 本体（`brew uninstall --zap`）と、Cask 自身が定義する `zap` 削除リスト
+  - Homebrew Formula 本体（`brew uninstall --force`）
   - プライバシー権限 (TCC) のリセット（Accessibility など、オプトイン）
   - 上記で拾いきれない残留物は Spotlight (`mdfind`) で保険的に検索
 - 削除前に確認ダイアログ、デフォルトはゴミ箱に移動（完全削除も選択可）

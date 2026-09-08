@@ -13,6 +13,7 @@ enum ScanCategory: String, CaseIterable, Sendable {
     case launchAgents = "Login Items (User)"
     case systemLaunchItems = "Login Items (System, manual removal required)"
     case homebrewCask = "Homebrew Cask"
+    case homebrewFormula = "Homebrew Formula"
     case tccPermissions = "Privacy Permissions (TCC)"
     case other = "Other"
 
@@ -36,6 +37,7 @@ enum ScanCategory: String, CaseIterable, Sendable {
         case .launchAgents: return String(localized: "ログイン項目（ユーザー）")
         case .systemLaunchItems: return String(localized: "ログイン項目（システム、手動削除が必要）")
         case .homebrewCask: return String(localized: "Homebrew Cask")
+        case .homebrewFormula: return String(localized: "Homebrew Formula")
         case .tccPermissions: return String(localized: "プライバシー権限 (TCC)")
         case .other: return String(localized: "その他")
         }

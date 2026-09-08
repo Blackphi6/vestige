@@ -21,9 +21,9 @@ enum ResidueScanner {
 
         // The app bundle itself — previously omitted, so a multi-hundred-MB app showed up
         // nowhere in the scan and its size never factored into the total. Homebrew Casks
-        // skip this: `brew uninstall --zap` already removes the bundle, so its size is
-        // attached to the Homebrew Cask entry below instead of listing it twice.
-        if app.homebrewCaskToken == nil {
+        // and Formulae skip this: `brew uninstall` already removes the bundle, so its
+        // size is attached to the Homebrew entry below instead of listing it twice.
+        if app.homebrewCaskToken == nil && app.homebrewFormulaName == nil {
             addIfExists(.appBundle, app.appPath)
         }
 
@@ -93,6 +93,16 @@ enum ResidueScanner {
                 detail: "brew uninstall --zap --force --cask \(token)",
                 sizeBytes: DirectorySizeCalculator.size(at: app.appPath),
                 action: .uninstallHomebrewCask(token: token)
+            ))
+        }
+
+        if let formulaName = app.homebrewFormulaName {
+            items.append(ResidueItem(
+                category: .homebrewFormula,
+                title: "Homebrew Formula: \(formulaName)",
+                detail: "brew uninstall --force \(formulaName)",
+                sizeBytes: DirectorySizeCalculator.size(at: app.appPath),
+                action: .uninstallHomebrewFormula(name: formulaName)
             ))
         }
 
