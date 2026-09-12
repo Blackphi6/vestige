@@ -8,6 +8,20 @@ enum HomebrewService {
     /// Apple Silicon and Intel default install locations — a GUI app's process doesn't
     /// see the user's shell PATH, so `brew` must be located explicitly.
     private static let knownBrewPaths = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
+    private static let knownCaskroomPaths = ["/opt/homebrew/Caskroom", "/usr/local/Caskroom"]
+    private static let knownCellarPaths = ["/opt/homebrew/Cellar", "/usr/local/Cellar"]
+
+    enum UninstallOutcome: Equatable {
+        case success
+        /// `brew uninstall` reported success (or failed) but Homebrew still considers the
+        /// token installed afterward — usually because a file removal mid-uninstall
+        /// silently failed (e.g. missing Full Disk Access), leaving residue in the
+        /// Caskroom/Cellar. Left alone, a later `brew install` sees that residue/receipt
+        /// and no-ops instead of reinstalling, so this is surfaced distinctly rather than
+        /// reported as a plain success.
+        case incomplete(message: String)
+        case failed(message: String)
+    }
 
     struct CaskInfo {
         let token: String
@@ -48,10 +62,47 @@ enum HomebrewService {
         }
     }
 
-    /// Runs `brew uninstall --zap --force --cask <token>` via the resolved `brew` binary.
-    static func uninstallCask(token: String) -> ProcessRunner.Result? {
-        guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else { return nil }
-        return ProcessRunner.run(brewPath, ["uninstall", "--zap", "--force", "--cask", token], timeout: 60)
+    /// Runs `brew uninstall --zap --force --cask <token>`, then verifies Homebrew's own
+    /// bookkeeping actually cleared. See `UninstallOutcome.incomplete` for why this
+    /// matters: without the check, a partially-failed removal reports as success and the
+    /// user only discovers the problem much later, when `brew install` for the same app
+    /// does nothing.
+    static func uninstallCask(token: String) -> UninstallOutcome {
+        guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else {
+            return .failed(message: String(localized: "brew が見つかりませんでした。"))
+        }
+
+        var result = ProcessRunner.run(brewPath, ["uninstall", "--zap", "--force", "--cask", token], timeout: 60)
+
+        // One retry: this clears most residue left by a first pass that stopped partway
+        // through (e.g. Homebrew's own metadata already reflects the removal, so the
+        // second run only needs to clean up leftover files).
+        if isCaskStillPresent(token: token) {
+            result = ProcessRunner.run(brewPath, ["uninstall", "--zap", "--force", "--cask", token], timeout: 60)
+        }
+
+        if isCaskStillPresent(token: token) {
+            return .incomplete(message: incompleteUninstallMessage(baseMessage: cleanedErrorMessage(from: result)))
+        }
+        return result.exitCode == 0 ? .success : .failed(message: cleanedErrorMessage(from: result))
+    }
+
+    private static func isCaskStillPresent(token: String) -> Bool {
+        if let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) {
+            let result = ProcessRunner.run(brewPath, ["list", "--cask", token], timeout: 15)
+            if result.exitCode == 0 { return true }
+        }
+        return knownCaskroomPaths.contains { hasResidue(atDirectory: "\($0)/\(token)") }
+    }
+
+    private static func hasResidue(atDirectory path: String) -> Bool {
+        guard let contents = try? FileManager.default.contentsOfDirectory(atPath: path) else { return false }
+        return !contents.isEmpty
+    }
+
+    static func incompleteUninstallMessage(baseMessage: String) -> String {
+        let warning = String(localized: "アンインストールが完全に終わっていません。Homebrewの管理データが残っているため、今後 brew で再インストールしても反映されない可能性があります。")
+        return "\(warning)\n\(baseMessage)"
     }
 
     /// `brew uninstall` runs every currently-loaded Cask's deprecated-API checks as a side
@@ -92,8 +143,6 @@ enum HomebrewService {
     /// Cellar rather than into /Applications — e.g. `brew install thock` vs. `brew install
     /// --cask thock`. These never appear in a Cask-only scan or a /Applications listing,
     /// so they're found by walking the Cellar directly rather than via `brew info --cask`.
-    private static let knownCellarPaths = ["/opt/homebrew/Cellar", "/usr/local/Cellar"]
-
     static func installedFormulaApps() -> [FormulaAppInfo] {
         let fm = FileManager.default
         var results: [FormulaAppInfo] = []
@@ -114,9 +163,30 @@ enum HomebrewService {
         return results
     }
 
-    /// Runs `brew uninstall --force <name>` via the resolved `brew` binary.
-    static func uninstallFormula(name: String) -> ProcessRunner.Result? {
-        guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else { return nil }
-        return ProcessRunner.run(brewPath, ["uninstall", "--force", name], timeout: 60)
+    /// Runs `brew uninstall --force <name>`, then verifies Homebrew's own bookkeeping
+    /// actually cleared — see `uninstallCask` for why this matters.
+    static func uninstallFormula(name: String) -> UninstallOutcome {
+        guard let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) else {
+            return .failed(message: String(localized: "brew が見つかりませんでした。"))
+        }
+
+        var result = ProcessRunner.run(brewPath, ["uninstall", "--force", name], timeout: 60)
+
+        if isFormulaStillPresent(name: name) {
+            result = ProcessRunner.run(brewPath, ["uninstall", "--force", name], timeout: 60)
+        }
+
+        if isFormulaStillPresent(name: name) {
+            return .incomplete(message: incompleteUninstallMessage(baseMessage: cleanedErrorMessage(from: result)))
+        }
+        return result.exitCode == 0 ? .success : .failed(message: cleanedErrorMessage(from: result))
+    }
+
+    private static func isFormulaStillPresent(name: String) -> Bool {
+        if let brewPath = ProcessRunner.resolveExecutable("brew", knownPaths: knownBrewPaths) {
+            let result = ProcessRunner.run(brewPath, ["list", "--formula", name], timeout: 15)
+            if result.exitCode == 0 { return true }
+        }
+        return knownCellarPaths.contains { hasResidue(atDirectory: "\($0)/\(name)") }
     }
 }

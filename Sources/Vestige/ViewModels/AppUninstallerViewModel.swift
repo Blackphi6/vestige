@@ -101,14 +101,16 @@ final class AppUninstallerViewModel: ObservableObject {
         case .deleteFile(let url):
             try TrashService.remove(url: url, disposition: trashDisposition)
         case .uninstallHomebrewCask(let token):
-            let result = HomebrewService.uninstallCask(token: token)
-            if result == nil || result?.exitCode != 0 {
-                throw ActionError.commandFailed(HomebrewService.cleanedErrorMessage(from: result))
+            switch HomebrewService.uninstallCask(token: token) {
+            case .success: break
+            case .incomplete(let message), .failed(let message):
+                throw ActionError.commandFailed(message)
             }
         case .uninstallHomebrewFormula(let name):
-            let result = HomebrewService.uninstallFormula(name: name)
-            if result == nil || result?.exitCode != 0 {
-                throw ActionError.commandFailed(HomebrewService.cleanedErrorMessage(from: result))
+            switch HomebrewService.uninstallFormula(name: name) {
+            case .success: break
+            case .incomplete(let message), .failed(let message):
+                throw ActionError.commandFailed(message)
             }
         case .resetTCCService(let service):
             guard let app = selectedApp else { return }

@@ -37,4 +37,10 @@ final class HomebrewServiceTests: XCTestCase {
         let message = HomebrewService.cleanedErrorMessage(from: nil)
         XCTAssertFalse(message.isEmpty)
     }
+
+    func testIncompleteUninstallMessageWarnsAboutFutureReinstall() {
+        let message = HomebrewService.incompleteUninstallMessage(baseMessage: "Error: something")
+        XCTAssertTrue(message.contains("完全に終わっていません"))
+        XCTAssertTrue(message.contains("Error: something"))
+    }
 }
