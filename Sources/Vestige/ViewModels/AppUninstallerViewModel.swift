@@ -103,12 +103,12 @@ final class AppUninstallerViewModel: ObservableObject {
         case .uninstallHomebrewCask(let token):
             let result = HomebrewService.uninstallCask(token: token)
             if result == nil || result?.exitCode != 0 {
-                throw ActionError.commandFailed(result?.stderr ?? "brew not found")
+                throw ActionError.commandFailed(HomebrewService.cleanedErrorMessage(from: result))
             }
         case .uninstallHomebrewFormula(let name):
             let result = HomebrewService.uninstallFormula(name: name)
             if result == nil || result?.exitCode != 0 {
-                throw ActionError.commandFailed(result?.stderr ?? "brew not found")
+                throw ActionError.commandFailed(HomebrewService.cleanedErrorMessage(from: result))
             }
         case .resetTCCService(let service):
             guard let app = selectedApp else { return }

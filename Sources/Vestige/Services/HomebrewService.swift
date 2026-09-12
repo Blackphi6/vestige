@@ -54,6 +54,35 @@ enum HomebrewService {
         return ProcessRunner.run(brewPath, ["uninstall", "--zap", "--force", "--cask", token], timeout: 60)
     }
 
+    /// `brew uninstall` runs every currently-loaded Cask's deprecated-API checks as a side
+    /// effect, so its stderr often mixes in warnings from Casks that have nothing to do
+    /// with the one being removed (e.g. some unrelated tap's `postflight` deprecation
+    /// notice). Strip those out and translate the one error that matters in practice —
+    /// Homebrew's own file-removal permission failure — into Vestige's own guidance,
+    /// since `brew`'s process inherits Vestige's Full Disk Access state, not the
+    /// terminal's.
+    static func cleanedErrorMessage(from result: ProcessRunner.Result?) -> String {
+        guard let result else { return String(localized: "brew が見つかりませんでした。") }
+        let relevantLines = result.stderr
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(String.init)
+            .filter { line in
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return false }
+                if trimmed.hasPrefix("Warning:") { return false }
+                if trimmed.contains("Please report this issue to") { return false }
+                if trimmed.hasSuffix(".rb") || trimmed.contains(".rb:") { return false }
+                return true
+            }
+
+        if relevantLines.contains(where: { $0.localizedCaseInsensitiveContains("Full Disk Access") }) {
+            return String(localized: "Homebrewがファイルを削除できませんでした。システム設定 > プライバシーとセキュリティ > フルディスクアクセス で Vestige を許可してから再試行してください。")
+        }
+
+        let message = relevantLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return message.isEmpty ? String(localized: "brew の実行に失敗しました（詳細不明）。") : message
+    }
+
     struct FormulaAppInfo {
         let formulaName: String
         let appPath: URL
